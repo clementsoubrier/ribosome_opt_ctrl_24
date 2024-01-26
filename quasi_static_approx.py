@@ -5,12 +5,8 @@
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.integrate as sci
-import scipy.optimize as opti
-from matplotlib import colors
-from matplotlib.ticker import FormatStrFormatter
-
+from multiprocessing import Pool
 
 """ Parameters """
 
@@ -52,8 +48,11 @@ DenominaR_list=[cr*(betar+U1)+cp*(1-V0)*gammap*(betar+U1)/(V0*gammar)-cu*U1,cr*(
 Eini_list=[KD/(V0*gammar/(betar+U1)-1),KD/(V1*gammar/(betar+U0)-1)]
 
 
-res =[]
-for U in np.linspace(U0,U1,N_test):
+
+
+
+def compute(U):
+    res =[]
     for V in np.linspace(V0,V1,N_test):
         for Eini in Eini_list:
             for Den in DenominaR_list:
@@ -64,11 +63,14 @@ for U in np.linspace(U0,U1,N_test):
                 Est0 = KD/(V*gammar/(betar+U)-1)
                 Rst0 = alpha0/(cr*(betar+U)+cp*(1-V)*gammap*(betar+U)/(V*gammar)-cu*U)
                 #simu
-                Z1=sci.solve_ivp(evol,[0,T],[Rini,Eini], method='Radau',t_eval=np.linspace(0,T,N),args=(U,V,alpha))
-                conv_R = np.nonzero(np.absolute(Z1.y[0,:]-Rst0)>=(0.05*(abs(Rini-Rst0)+0.1)))[0][-1]
-                conv_E = np.nonzero(np.absolute(Z1.y[1,:]-Est0)>=(0.05*(abs(Eini-Est0)+0.1)))[0][-1]
+                thres_val = np.linalg.norm(np.array([Rini-Rst0,Eini-Est0]))
+                if thres_val >=0.1:
+                    Z1=sci.solve_ivp(evol,[0,T],[Rini,Eini], method='Radau',t_eval=np.linspace(0,T,N),args=(U,V,alpha))
+                    conv_list = (np.absolute(Z1.y[0,:]-Rst0)**2+np.absolute(Z1.y[1,:]-Est0)**2)**0.5
+                
+                    conv = np.nonzero(conv_list >=(0.05*thres_val))[0][-1]
 
-                res.append(max(conv_E,conv_R)*T/N)
+                res.append(conv*T/N)
                 
                 alpha = alphamax
                 Rini = alpha0/Den
@@ -76,12 +78,23 @@ for U in np.linspace(U0,U1,N_test):
                 Est0 = KD/(V*gammar/(betar+U)-1)
                 Rst0 = alphamax/(cr*(betar+U)+cp*(1-V)*gammap*(betar+U)/(V*gammar)-cu*U)
                 #simu
-                Z1=sci.solve_ivp(evol,[0,T],[Rini,Eini], method='Radau',t_eval=np.linspace(0,T,N),args=(U,V,alpha))
+                thres_val = np.linalg.norm(np.array([Rini-Rst0,Eini-Est0]))
+                if thres_val >=0.1:
+                    Z1=sci.solve_ivp(evol,[0,T],[Rini,Eini], method='Radau',t_eval=np.linspace(0,T,N),args=(U,V,alpha))
+                    conv_list = (np.absolute(Z1.y[0,:]-Rst0)**2+np.absolute(Z1.y[1,:]-Est0)**2)**0.5
                 
-                conv_R = np.nonzero(np.absolute(Z1.y[0,:]-Rst0)>=0.05*(abs(Rini-Rst0)+0.1))[0][-1]
-                conv_E = np.nonzero(np.absolute(Z1.y[1,:]-Est0)>=0.05*(abs(Eini-Est0)+0.1))[0][-1]
-            
-                res.append(max(conv_E,conv_R)*T/N)
-print(res)
+                    conv = np.nonzero(conv_list >=(0.05*thres_val))[0][-1]
+
+                res.append(conv*T/N)
+    return res
+
+res =[]
+with Pool(processes=8) as pool:
+    for subres in pool.imap_unordered(compute, np.linspace(U0,U1,N_test)):
+        res.extend(subres)
+
+    
+
+
 print(f'Maximum convergence time (95 percent) of {max(res)} hours compared to the assumed period fo {Peri} hours.')
         
