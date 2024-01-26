@@ -4,8 +4,11 @@ The files quasi_atatic_approx.py is a parameter study of convergence time of the
 The other files are used to plot the figures of the article:
 
 phase_plot.py for figures 2a,2b and 5
+
 Phase_diage.py for figures 2c and 2d
+
 range_control.py for figures 4
+
 plot_cst_ctrl3.py for fig 3
 
 
