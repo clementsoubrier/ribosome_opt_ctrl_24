@@ -13,14 +13,13 @@ from mpmath import mp, nstr
 
 ''' De-comment to get the figure for the oscillating case and non oscillating case'''
 
-'''
-#parameters oscillating
 
+#parameters oscillating
+'''
 far =  mp.mpf(0.5) #between 0 and 1
 fap = 1-far
 gammar =  mp.mpf(10) #/h
 gammap =  mp.mpf(10) #/h
-betap = mp.mpf(1)
 betar =  mp.mpf(1)
 KD = mp.mpf( 0.5) #no value
 K =  mp.mpf(1)
@@ -36,6 +35,11 @@ Ymax=1.15
 T = 8
 stepODE=0.001
 mp.dps = 50
+
+Est0=KD/(far*gammar/(betar+U)-1)
+Ini_1=np.array([0.35,1,Est0])
+Ini_2=np.array([0.19,1,Est0])
+Ini_3=np.array([0.14,1,Est0])
 '''
 
 
@@ -44,7 +48,6 @@ far =  mp.mpf(0.5) #between 0 and 1
 fap = 1-far
 gammar =  mp.mpf(10) #/h
 gammap =  mp.mpf(10) #/h
-betap = mp.mpf(1)
 betar =  mp.mpf(1)
 KD = mp.mpf( 0.5) #no value
 K =  mp.mpf(1)
@@ -61,12 +64,16 @@ T =5
 stepODE=0.001
 mp.dps = 50
 
+Est0=KD/(far*gammar/(betar+U)-1)
+Ini_1=np.array([0.57,1,Est0])
+Ini_2=np.array([0.19,1,Est0])
+Ini_3=np.array([0.10,1,Est0])
 
+# End of parameters to comment/de-comment
 DenominaR=cr*(betar+U)/far+cp*gammap*(betar+U)/(far*gammar)-K*U
 Est0=KD/(far*gammar/(betar+U)-1)
 Rst0=alpha0/DenominaR
-Pgst0=Rst0*(betar+U)*fap*gammap/(far*gammar*betap)
-print(Est0,Rst0,Pgst0)
+print(Est0,Rst0)
 
 
 
@@ -129,16 +136,16 @@ plt.legend()
 def f(t,X):
     A=np.zeros(3)
     A[0]=far*gammar*X[2]/(KD+X[2])*X[0]-(betar+U)*X[0]
-    A[1]=fap*gammap*X[2]/(KD+X[2])*X[0]-(betap)*X[1]
+    A[1]=fap*gammap*X[2]/(KD+X[2])*X[0]
     A[2]=alpha0-X[0]*(cr*gammar*X[2]/(KD+X[2])+cp*gammap*X[2]/(KD+X[2]))+X[0]*U*K
     return A
 ''' '''
 N2=int(math.ceil(T/stepODE)+1)
-Z1=sci.solve_ivp(f,[0,T*2],np.array([0.57,1,Est0]), method='RK45',t_eval=np.linspace(0,T*2,N2*2))#[0.35,1,Est0]
+Z1=sci.solve_ivp(f,[0,T*2],Ini_1, method='RK45',t_eval=np.linspace(0,T*2,N2*2))#[0.35,1,Est0]
 plt.plot(Z1.y[0,:],Z1.y[2,:],color='black')
-Z2=sci.solve_ivp(f,[0,T*2],np.array([0.19,1,Est0]), method='RK45',t_eval=np.linspace(0,T*2,N2*2))
+Z2=sci.solve_ivp(f,[0,T*2],Ini_2, method='RK45',t_eval=np.linspace(0,T*2,N2*2))
 plt.plot(Z2.y[0,:],Z2.y[2,:],color='green')
-Z3=sci.solve_ivp(f,[0,T*2],np.array([0.10,1,Est0]), method='RK45',t_eval=np.linspace(0,T*2,N2*2))#[0.14,1,Est0]
+Z3=sci.solve_ivp(f,[0,T*2],Ini_3, method='RK45',t_eval=np.linspace(0,T*2,N2*2))#[0.14,1,Est0]
 plt.plot(Z3.y[0,:],Z3.y[2,:],color='blue')
 
 plt.xlim(Xmin,Xmax)
