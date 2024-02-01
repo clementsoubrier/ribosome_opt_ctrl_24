@@ -11,4 +11,5 @@ range_control.py for figures 4;
 
 plot_cst_ctrl3.py for fig 3;
 
+DOI 10.5281/zenodo.10607446
 
